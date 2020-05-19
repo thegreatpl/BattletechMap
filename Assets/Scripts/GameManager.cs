@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class GameManager : MonoBehaviour
 {
@@ -39,13 +40,24 @@ public class GameManager : MonoBehaviour
     /// <summary>
     /// The current date. 
     /// </summary>
-    public string CurrentDate; 
+    public string CurrentDate;
+
+    /// <summary>
+    /// The tile sprite. 
+    /// </summary>
+    public Sprite tilesprite; 
 
     /// <summary>
     /// List of systems that are currently out there. 
     /// </summary>
     [HideInInspector]
     public List<StarScript> Systems;
+
+
+    /// <summary>
+    /// The overlay tilemap script. 
+    /// </summary>
+    public TilemapScript Tilemap;
 
     // Start is called before the first frame update
     void Start()
@@ -84,6 +96,8 @@ public class GameManager : MonoBehaviour
         yield return StartCoroutine(LoadSystemInformation());
 
         yield return StartCoroutine(IniatilizeSystems());
+
+        yield return StartCoroutine(Tilemap.GeneratePoliticalBorders()); 
 
         yield return StartCoroutine(UIManager.InitializeUI()); 
 
@@ -174,6 +188,7 @@ public class GameManager : MonoBehaviour
                     }
                 }
                 if (!star.Ownerships.ContainsKey(ownership.Year)) //why do we have duplicate years? 
+                    //correction, duplicate years due to clan invasion. Look into method we can use this. 
                     star.Ownerships.Add(ownership.Year, ownership);
             }
 
