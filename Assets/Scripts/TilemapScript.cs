@@ -51,7 +51,7 @@ public class TilemapScript : MonoBehaviour
         Dictionary<string, OwnershipTile> tiles = new Dictionary<string, OwnershipTile>();
 
         //ignore these faction codes when creating borders. 
-        string[] missingfactioncodes = { "U", "A", "U (A)", "" }; 
+        string[] missingfactioncodes = { "U", "A", "U (A)", "U(A)" }; 
 
         foreach (var tile in TileOwnershipInfo)
         {

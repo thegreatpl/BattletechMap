@@ -6,7 +6,7 @@ public class CameraMovement : MonoBehaviour {
     Camera Camera; 
     public float slowdown = 10;
 
-    public float PanSpeed = 100; 
+    public float PanSpeed = 2; 
 
     bool dragging = false;
 
@@ -31,7 +31,7 @@ public class CameraMovement : MonoBehaviour {
         if (Input.GetMouseButton(0))
         {
             Vector3 pos = Camera.main.ScreenToViewportPoint(Input.mousePosition) - panOrigin;    //Get the difference between where the mouse clicked and where it moved
-            transform.position = oldPos + -pos * PanSpeed;                                         //Move the position of the camera to simulate a drag, speed * 10 for screen to worldspace conversion
+            transform.position = oldPos + -pos * (PanSpeed * Camera.orthographicSize);                                         //Move the position of the camera to simulate a drag, speed * 10 for screen to worldspace conversion
         }
 
         if (Input.GetMouseButtonUp(0))
@@ -50,13 +50,13 @@ public class CameraMovement : MonoBehaviour {
             inputX /= slowdown;
 
         if (inputY != 0)
-            inputY /= slowdown; 
+            inputY /= slowdown;
 
         transform.position += new Vector3(inputX, inputY, 0);
 
 
         float zoom = Input.GetAxis("Zoom"); 
-        if (zoom > 0 && Camera.orthographicSize > 0)
+        if (zoom > 0 && Camera.orthographicSize > 1)
         {
             Camera.orthographicSize--; 
         }

@@ -52,8 +52,8 @@ public class StarScript : MonoBehaviour
     void LoadOwnershipInfo()
     {
         var date = GameManager.Instance.CurrentDate;
-        //try
-        //{
+        try
+        {
             //need to handle if there is no data. 
             CurrentStarOwnership = Star.Ownerships[date];
 
@@ -68,7 +68,7 @@ public class StarScript : MonoBehaviour
                 //some form of independent polity. 
                 if (CurrentStarOwnership.FactionCode.Contains("I("))
                     Faction = GameManager.Instance.Factions["I"];
-                else if (CurrentStarOwnership.FactionCode.Contains("U (A)")) //is this a faction missing from the list?
+                else if (CurrentStarOwnership.FactionCode.Contains("U (A)") || CurrentStarOwnership.FactionCode.Contains("U(A)")) //is this a faction missing from the list?
                     Faction = GameManager.Instance.Factions["U"];
                 else if (CurrentStarOwnership.IsDisputed)
                 {
@@ -80,13 +80,13 @@ public class StarScript : MonoBehaviour
                 Sprite.color = Faction.UnityColour;
             }
 
-        //}
-        //catch (Exception e)
-        //{
-        //    Debug.LogError(e);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
 
-        //    Sprite.color = Color.clear; 
-        //}
+            Sprite.color = Color.clear; 
+        }
 
 
     }
