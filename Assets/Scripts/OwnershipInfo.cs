@@ -11,8 +11,6 @@ public class TileOwnershipInfo
 {
     public Vector3Int Position;
 
-    public string date;
-
     public List<PolityDistance> PolityDistances; 
 
     public TileOwnershipInfo()
@@ -21,21 +19,21 @@ public class TileOwnershipInfo
     }
 }
 
-public struct PolityDistance
+public class PolityDistance
 {
     /// <summary>
     /// The faction. 
     /// </summary>
-    public Faction Faction;
+    public Star Star;
 
     /// <summary>
     /// Distance from the center of the tile to the nearest owned star system. 
     /// </summary>
     public float Distance; 
 
-    public PolityDistance(float distance, Faction faction)
+    public PolityDistance(float distance, Star star)
     {
         Distance = distance;
-        Faction = faction; 
+        Star = star; 
     }
 }

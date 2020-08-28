@@ -18,13 +18,13 @@ public class TilemapScript : MonoBehaviour
     public string date;
 
 
-    Dictionary<string, List<TileOwnershipInfo>> TileOwnershipInfo; 
+    List<TileOwnershipInfo> TileOwnershipInfo; 
 
     // Start is called before the first frame update
     void Start()
     {
         Tilemap = GetComponent<Tilemap>();
-        TileOwnershipInfo = new Dictionary<string, List<TileOwnershipInfo>>(); 
+        TileOwnershipInfo = new List<TileOwnershipInfo>(); 
     }
 
     // Update is called once per frame
@@ -44,27 +44,43 @@ public class TilemapScript : MonoBehaviour
 
     IEnumerator FillInPoliticalBorders()
     {
-        if (!TileOwnershipInfo.ContainsKey(date))
-            yield break;
+        //if (!TileOwnershipInfo.ContainsKey(date))
+        //    yield break;
         int idx = 0;
 
-        Dictionary<string, OwnershipTile> tiles = new Dictionary<string, OwnershipTile>(); 
+        Dictionary<string, OwnershipTile> tiles = new Dictionary<string, OwnershipTile>();
 
-        foreach (var tile in TileOwnershipInfo[date])
+        //ignore these faction codes when creating borders. 
+        string[] missingfactioncodes = { "U", "", "A" }; 
+
+        foreach (var tile in TileOwnershipInfo)
         {
-            var polity = tile.PolityDistances.OrderBy(x => x.Distance).FirstOrDefault();
+            var polity = tile.PolityDistances.OrderBy(x => x.Distance).
+                FirstOrDefault(x => (bool)!x.Star.Ownerships[date]?.IsHidden 
+                    && !missingfactioncodes.Contains(x.Star.Ownerships[date]?.FactionCode));
 
-            if (polity.Faction?.ID == null)
+            var factioncode = polity?.Star.Ownerships[date]?.FactionCode;
+
+            if (factioncode == null)
                 continue;
 
-            if (!tiles.ContainsKey(polity.Faction.ID))
+            if (!GameManager.Instance.Factions.ContainsKey(factioncode))
+                continue; 
+            var faction = GameManager.Instance.Factions[factioncode]; 
+
+
+
+            if (polity.Star?.Ownerships[date]?.FactionCode == null)
+                continue;
+
+            if (!tiles.ContainsKey(faction.ID))
             {
                 var newtile = ScriptableObject.CreateInstance<OwnershipTile>();
-                newtile.color = polity.Faction.UnityColour;
+                newtile.color = faction.UnityColour;
                 newtile.sprite = GameManager.Instance.tilesprite; 
-                tiles.Add(polity.Faction.ID, newtile); 
+                tiles.Add(faction.ID, newtile); 
             }
-            Tilemap.SetTile(tile.Position, tiles[polity.Faction.ID]); 
+            Tilemap.SetTile(tile.Position, tiles[faction.ID]); 
 
             idx++; 
             if (idx > 1000)
@@ -80,64 +96,39 @@ public class TilemapScript : MonoBehaviour
     public IEnumerator GeneratePoliticalBorders()
     {
         int dist = 30; 
-        TileOwnershipInfo = new Dictionary<string, List<TileOwnershipInfo>>(); 
+        var ownerships = new Dictionary<Vector3Int, TileOwnershipInfo>();
 
-       
-        foreach(var date in GameManager.Instance.Dates)
+        int idx = 0;
+        foreach (var star in GameManager.Instance.Systems)
         {
-            if (TileOwnershipInfo.ContainsKey(date))//figure out how to deal with the multiple years. 
-                continue; 
-
-            int idx = 0; 
-            Dictionary<Vector3Int, TileOwnershipInfo> ownerships = new Dictionary<Vector3Int, TileOwnershipInfo>(); 
-            foreach (var star in GameManager.Instance.Systems)
+            var nearestCell = Tilemap.WorldToCell(star.transform.position);
+            for (int xdx = nearestCell.x - dist; xdx < nearestCell.x + (dist * 2); xdx++)
             {
-                
-                if (!star.Star.Ownerships.ContainsKey(date))
-                    continue; 
-                var ownership = star.Star.Ownerships[date];
-                if (ownership.FactionCode == "U" || ownership.IsHidden) //unihabited, can skip over it. 
-                    continue;
-
-                var nearestCell = Tilemap.WorldToCell(star.transform.position);
-                for (int xdx = nearestCell.x - dist; xdx < nearestCell.x + (dist * 2); xdx++)
+                for (int ydx = nearestCell.y - dist; ydx < nearestCell.y + (dist * 2); ydx++)
                 {
-                    for (int ydx = nearestCell.y - dist; ydx < nearestCell.y + (dist *2); ydx++)
+                    var coord = new Vector3Int(xdx, ydx, 0);
+                    var distance = Vector3.Distance(Tilemap.CellToWorld(coord), star.transform.position);
+                    if (distance <= dist)
                     {
-                        var coord = new Vector3Int(xdx, ydx, 0);
-                        var distance = Vector3.Distance(Tilemap.CellToWorld(coord), star.transform.position); 
-                        if (distance <= dist)
+                        if(!ownerships.ContainsKey(coord))
                         {
-                            if (!ownerships.ContainsKey(coord))
-                                ownerships.Add(coord, new global::TileOwnershipInfo()
-                                {
-                                    date = date,
-                                    Position = coord
-                                });
-
-                            var factioncode = star.Star.Ownerships[date]?.FactionCode;
-                            if (factioncode == null || !GameManager.Instance.Factions.ContainsKey(factioncode))
-                                continue;
-
-                            ownerships[coord].PolityDistances.Add(new PolityDistance(distance, GameManager.Instance.Factions[factioncode]));
+                            ownerships.Add(coord, new global::TileOwnershipInfo()
+                            {
+                                Position = coord
+                            });
                         }
+                        ownerships[coord].PolityDistances.Add(new PolityDistance(distance, star.Star)); 
                     }
                 }
-                idx++; 
-               // yield return null; 
-               if (idx > 10)
-                {
-                    yield return null;
-                    idx = 0; 
-                }
-
-
             }
-
-            TileOwnershipInfo.Add(date, ownerships.Values.ToList());
-            yield return null;
-           // break; 
+            idx++; 
+            if (idx % 10 == 0)
+            {
+                yield return null; 
+            }
         }
+
+        TileOwnershipInfo = ownerships.Values.ToList();
 
         yield return FillInPoliticalBorders(); 
     }
